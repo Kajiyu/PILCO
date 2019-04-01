@@ -1,5 +1,6 @@
 import tensorflow as tf
 import gpflow
+import sys
 import numpy as np
 float_type = gpflow.settings.dtypes.float_type
 
@@ -116,6 +117,8 @@ class MGPR(gpflow.Parameterized):
         # TODO: change this block according to the PR of tensorflow. Maybe move it into a function?
         X = inp[None, :, :, :]/tf.square(self.lengthscales[:, None, None, :])
         X2 = -inp[:, None, :, :]/tf.square(self.lengthscales[None, :, None, :])
+        tf.print(R, output_stream=sys.stderr)
+        tf.print(s, output_stream=sys.stderr)
         Q = tf.matrix_solve(R, s)/2
         Xs = tf.reduce_sum(X @ Q * X, -1)
         X2s = tf.reduce_sum(X2 @ Q * X2, -1)

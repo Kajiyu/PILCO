@@ -11,11 +11,7 @@ np.random.seed(0)
 SUBS=3
 bf = 30
 maxiter=50
-max_action=2.0
-target = np.array([1.0, 0.0, 0.0])
 weights = np.diag([2.0, 2.0, 0.3])
-m_init = np.reshape([-1.0, 0, 0.0], (1,3))
-S_init = np.diag([0.01, 0.05, 0.01])
 T = 100
 T_sim = T
 J = 4
@@ -32,14 +28,15 @@ with tf.Session() as sess:
         X = np.vstack((X, X_))
         Y = np.vstack((Y, Y_))
 
-    state_dim = Y.shape[1]
-    control_dim = X.shape[1] - state_dim
+    state_dim = env.observation_space.shape[0]
+    control_dim = env.action_space.shape[0]
+    print("state dim::", state_dim, "control dim::", control_dim)
 
-    controller = RbfController(state_dim=state_dim, control_dim=control_dim, num_basis_functions=bf, max_action=max_action)
+    controller = RbfController(state_dim=state_dim, control_dim=control_dim, num_basis_functions=bf)
 
     R = StateEntropyReward(state_dim=state_dim)
 
-    pilco = PILCO(X, Y, controller=controller, horizon=T, reward=R, m_init=m_init, S_init=S_init)
+    pilco = PILCO(X, Y, controller=controller, horizon=T, reward=R)
 
     # for numerical stability
     for model in pilco.mgpr.models:

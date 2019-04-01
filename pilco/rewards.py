@@ -2,6 +2,7 @@ import abc
 import tensorflow as tf
 from gpflow import Parameterized, Param, params_as_tensors, settings
 import numpy as np
+import math
 
 float_type = settings.dtypes.float_type
 
@@ -61,6 +62,7 @@ class ExponentialReward(Reward):
         sR = r2 - muR @ muR
         muR.set_shape([1, 1])
         sR.set_shape([1, 1])
+        # muR = tf.Print(muR, [muR])
         return muR, sR
 
 class LinearReward(Reward):
@@ -94,4 +96,27 @@ class CombinedRewards(Reward):
             tmp1, tmp2 = r.compute_reward(m, s)
             muR += self.coefs[c] * tmp1
             sR += self.coefs[c]**2 * tmp2
+        return muR, sR
+
+
+class StateEntropyReward(Reward):
+    def __init__(self, state_dim, W=None):
+        Reward.__init__(self)
+        self.state_dim = state_dim
+        if W is not None:
+            self.W = Param(np.reshape(W, (state_dim, 1)), trainable=False)
+        else:
+            self.W = Param(np.zeros((state_dim, 1)) / float(state_dim), trainable=False)
+            # self.W = Param(np.ones((state_dim, 1)) / float(state_dim), trainable=False)
+
+    @params_as_tensors
+    def compute_reward(self, m, s):
+        # muR = tf.log(tf.abs(tf.linalg.det(s))) * 0.5
+        # muR = (tf.log(tf.abs(tf.linalg.det(s))) * 0.5 + float(self.state_dim) * (1.0 + math.log(math.pi * 2)))
+        # muR = 1.0 - tf.linalg.trace(s)
+        # print(s)
+        muR = 1.0 - tf.reduce_sum(s)
+        # muR = tf.reduce_sum(s)
+        # muR = tf.Print(muR, [muR])
+        sR = tf.transpose(self.W) @ s @ self.W
         return muR, sR
